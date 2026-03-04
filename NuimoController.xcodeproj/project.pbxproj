@@ -112,6 +112,7 @@
 			);
 			name = NuimoController;
 			packageProductDependencies = (
+				AABB00022F5560000060864A /* Yams */,
 			);
 			productName = NuimoController;
 			productReference = 2431550E2F5552580060864A /* NuimoController.app */;
@@ -197,6 +198,9 @@
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2431550F2F5552580060864A /* Products */;
+			packageReferences = (
+				AABB00012F5560000060864A /* XCRemoteSwiftPackageReference "Yams" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -403,6 +407,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "NuimoController needs Bluetooth to connect to your Nuimo device.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -435,6 +441,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "NuimoController needs Bluetooth to connect to your Nuimo device.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -467,6 +475,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -488,6 +497,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -573,6 +583,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AABB00012F5560000060864A /* XCRemoteSwiftPackageReference "Yams" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jpsim/Yams.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AABB00022F5560000060864A /* Yams */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AABB00012F5560000060864A /* XCRemoteSwiftPackageReference "Yams" */;
+			productName = Yams;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 243155062F5552580060864A /* Project object */;
 }

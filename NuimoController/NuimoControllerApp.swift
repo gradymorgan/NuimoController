@@ -1,17 +1,10 @@
-//
-//  NuimoControllerApp.swift
-//  NuimoController
-//
-//  Created by Grady Morgan on 3/1/26.
-//
-
 import SwiftUI
 
 @main
 struct NuimoControllerApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
+        Settings { EmptyView() }
     }
 }
