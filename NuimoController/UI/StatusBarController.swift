@@ -107,7 +107,9 @@ final class StatusBarController: @unchecked Sendable {
 
         menu.addItem(NSMenuItem(title: "Reconnect", action: #selector(AppDelegate.reconnectClicked), keyEquivalent: "r"))
         menu.addItem(NSMenuItem(title: "Reload Config", action: #selector(AppDelegate.reloadConfigClicked), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Open Config File", action: #selector(StatusBarController.openConfigFile), keyEquivalent: ""))
+        let openConfigItem = NSMenuItem(title: "Open Config File", action: #selector(StatusBarController.openConfigFile), keyEquivalent: "")
+        openConfigItem.target = self
+        menu.addItem(openConfigItem)
 
         menu.addItem(NSMenuItem.separator())
 

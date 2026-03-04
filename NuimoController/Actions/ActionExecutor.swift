@@ -24,6 +24,16 @@ final class ActionExecutor: ActionExecutorProtocol, @unchecked Sendable {
         self.launchExecutor = launchExecutor
     }
 
+    func execute(_ action: NuimoAction, rawDelta: Int16) {
+        switch action {
+        case .scroll(let direction, let speed):
+            AccessibilityHelper.promptIfNeeded()
+            scrollExecutor.execute(direction: direction, speed: speed, rawDelta: rawDelta)
+        default:
+            execute(action)
+        }
+    }
+
     func execute(_ action: NuimoAction) {
         switch action {
         case .keystroke(let key, let modifiers):

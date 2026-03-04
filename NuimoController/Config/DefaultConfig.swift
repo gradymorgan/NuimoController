@@ -17,12 +17,12 @@ enum DefaultConfig {
       rotate_clockwise:
         action: scroll
         direction: down
-        speed: 1.5
+        speed: 3.0
 
       rotate_counter_clockwise:
         action: scroll
         direction: up
-        speed: 1.5
+        speed: 3.0
 
       button_press:
         action: keystroke

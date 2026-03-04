@@ -9,7 +9,7 @@ final class EncoderAccumulator: @unchecked Sendable {
     private var timer: Timer?
     private var onFlush: ((NuimoEvent) -> Void)?
 
-    init(windowInterval: TimeInterval = 0.05) {
+    init(windowInterval: TimeInterval = 0.02) {
         self.windowInterval = windowInterval
     }
 

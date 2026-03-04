@@ -26,8 +26,13 @@ final class MockConfigLoader: ConfigLoaderProtocol, @unchecked Sendable {
 
 final class MockActionExecutor: ActionExecutorProtocol, @unchecked Sendable {
     var lastAction: NuimoAction?
+    var lastRawDelta: Int16?
 
     func execute(_ action: NuimoAction) { lastAction = action }
+    func execute(_ action: NuimoAction, rawDelta: Int16) {
+        lastAction = action
+        lastRawDelta = rawDelta
+    }
 }
 
 final class MockLEDController: LEDControllerProtocol, @unchecked Sendable {

@@ -31,9 +31,14 @@ final class EventDispatcher: EventDispatcherProtocol, @unchecked Sendable {
     }
 
     func handleBLEData(_ data: Data, characteristicUUID: CBUUID) {
+        let hexBytes = data.map { String(format: "%02x", $0) }.joined(separator: " ")
+        logger.debug("BLE raw: char=\(characteristicUUID.uuidString) bytes=[\(hexBytes)] len=\(data.count)")
+
         guard let event = EventDecoder.decode(data: data, characteristicUUID: characteristicUUID) else {
+            logger.warning("BLE decode failed: char=\(characteristicUUID.uuidString) bytes=[\(hexBytes)]")
             return
         }
+        logger.debug("BLE decoded: \(String(describing: event)) (configKey=\(event.configKey ?? "none"))")
         dispatch(event)
     }
 
@@ -43,6 +48,13 @@ final class EventDispatcher: EventDispatcherProtocol, @unchecked Sendable {
             return
         }
         logger.info("Executing action for \(event.configKey ?? "unknown")")
-        actionExecutor.execute(action)
+
+        // Pass the raw rotation delta through to scroll actions
+        switch event {
+        case .rotateClockwise(let delta), .rotateCounterClockwise(let delta):
+            actionExecutor.execute(action, rawDelta: delta)
+        default:
+            actionExecutor.execute(action)
+        }
     }
 }

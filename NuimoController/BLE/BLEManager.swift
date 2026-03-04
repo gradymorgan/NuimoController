@@ -51,8 +51,10 @@ final class BLEManager: NSObject, BLEManagerProtocol, @unchecked Sendable {
             return
         }
         state = .scanning
+        // Scan without service filter — Nuimo may not advertise its custom
+        // service UUID; we filter by device name in didDiscover instead.
         centralManager.scanForPeripherals(
-            withServices: [NuimoUUID.nuimoService],
+            withServices: nil,
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
         )
         logger.info("Scanning for Nuimo devices...")
@@ -147,10 +149,11 @@ extension BLEManager: CBCentralManagerDelegate {
         rssi RSSI: NSNumber
     ) {
         let name = peripheral.name ?? "Unknown"
-        logger.info("Discovered: \(name) (RSSI: \(RSSI))")
+        let serviceUUIDs = (advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?.map(\.uuidString) ?? []
+        logger.info("Discovered: \(name) (RSSI: \(RSSI), services: \(serviceUUIDs))")
 
         if let filter = deviceNameFilter, !filter.isEmpty {
-            guard name.contains(filter) else { return }
+            guard name.localizedCaseInsensitiveContains(filter) else { return }
         }
 
         centralManager.stopScan()

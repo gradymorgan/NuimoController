@@ -1,4 +1,6 @@
 import AppKit
+import Combine
+import CoreBluetooth
 import os.log
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -16,6 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var launchAtLogin = LaunchAtLogin()
     private(set) var sleepWakeHandler = SleepWakeHandler()
     private(set) var cliOptions = CLIOptions()
+    private var cancellables = Set<AnyCancellable>()
+    private var statusBarController: StatusBarController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         cliOptions = CLIParser.parse()
@@ -23,48 +27,80 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             logger.info("Verbose logging enabled")
         }
         logger.info("NuimoController starting up")
+        setupComponents()
         setupStatusBar()
         setupSleepWake()
+    }
+
+    // MARK: - Component Bootstrap
+
+    private func setupComponents() {
+        let loader = ConfigLoader()
+        do {
+            try loader.load()
+        } catch {
+            logger.error("Failed to load config: \(error.localizedDescription)")
+        }
+        self.configLoader = loader
+
+        let config = loader.currentConfig
+
+        let registry = ActionRegistry()
+        registry.updateFromConfig(config)
+
+        let executor = ActionExecutor()
+        self.actionExecutor = executor
+
+        let dispatcher = EventDispatcher(
+            actionRegistry: registry,
+            actionExecutor: executor
+        )
+        self.eventDispatcher = dispatcher
+
+        let ble = BLEManager()
+        self.bleManager = ble
+
+        let led = LEDController(bleManager: ble)
+        led.updateSettings(
+            brightness: config.ledBrightness,
+            duration: config.ledDisplayDuration,
+            onionSkinning: config.ledOnionSkinning
+        )
+        self.ledController = led
+
+        // Apply Nuimo connection settings
+        ble.deviceNameFilter = config.deviceName
+        ble.autoReconnect = config.autoReconnect
+        ble.reconnectInterval = config.reconnectIntervalSeconds
+
+        // Re-wire components when config changes
+        loader.configChanged
+            .receive(on: DispatchQueue.main)
+            .sink { [weak registry, weak led, weak ble] (newConfig: NuimoConfig) in
+                registry?.updateFromConfig(newConfig)
+                led?.updateSettings(
+                    brightness: newConfig.ledBrightness,
+                    duration: newConfig.ledDisplayDuration,
+                    onionSkinning: newConfig.ledOnionSkinning
+                )
+                ble?.deviceNameFilter = newConfig.deviceName
+                ble?.autoReconnect = newConfig.autoReconnect
+                ble?.reconnectInterval = newConfig.reconnectIntervalSeconds
+            }
+            .store(in: &cancellables)
+
+        ble.delegate = self
+        ble.startScanning()
     }
 
     // MARK: - Status Bar
 
     private func setupStatusBar() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-
-        if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "circle.grid.3x3", accessibilityDescription: "Nuimo Controller")
-        }
-
-        statusItem.menu = buildMenu()
+        let sbc = StatusBarController(statusItem: statusItem)
+        self.statusBarController = sbc
+        sbc.updateConnectionState(.idle)
         logger.info("Status bar item created")
-    }
-
-    func buildMenu() -> NSMenu {
-        let menu = NSMenu()
-
-        let statusMenuItem = NSMenuItem(title: "Status: Disconnected", action: nil, keyEquivalent: "")
-        statusMenuItem.tag = MenuItemTag.status.rawValue
-        statusMenuItem.isEnabled = false
-        menu.addItem(statusMenuItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        menu.addItem(NSMenuItem(title: "Reconnect", action: #selector(reconnectClicked), keyEquivalent: "r"))
-        menu.addItem(NSMenuItem(title: "Reload Config", action: #selector(reloadConfigClicked), keyEquivalent: ""))
-
-        menu.addItem(NSMenuItem.separator())
-
-        let loginItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
-        loginItem.tag = MenuItemTag.launchAtLogin.rawValue
-        loginItem.state = launchAtLogin.isEnabled ? .on : .off
-        menu.addItem(loginItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitClicked), keyEquivalent: "q"))
-
-        return menu
     }
 
     // MARK: - Sleep/Wake
@@ -97,8 +133,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func toggleLaunchAtLogin() {
         launchAtLogin.toggle()
-        // Update menu to reflect new state
-        statusItem.menu = buildMenu()
     }
 
     @objc func quitClicked() {
@@ -111,9 +145,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var currentStatusItem: NSStatusItem? { statusItem }
 }
 
+// MARK: - BLEManagerDelegate
+
+extension AppDelegate: BLEManagerDelegate {
+    func bleManager(_ manager: BLEManager, didChangeState state: BLEManagerState) {
+        DispatchQueue.main.async { [weak self] in
+            self?.statusBarController?.updateConnectionState(state)
+        }
+    }
+
+    func bleManager(_ manager: BLEManager, didReceiveData data: Data, forCharacteristic uuid: CBUUID) {
+        if let dispatcher = eventDispatcher as? EventDispatcher {
+            dispatcher.handleBLEData(data, characteristicUUID: uuid)
+        } else {
+            logger.error("Event dispatcher does not support handleBLEData")
+        }
+    }
+
+    func bleManager(_ manager: BLEManager, didReadDeviceInfo key: String, value: String) {
+        DispatchQueue.main.async { [weak self] in
+            self?.statusBarController?.updateDeviceInfo(key: key, value: value)
+        }
+    }
+
+    func bleManager(_ manager: BLEManager, didUpdateBattery level: UInt8) {
+        DispatchQueue.main.async { [weak self] in
+            self?.statusBarController?.updateBattery(level)
+        }
+    }
+}
+
 // MARK: - Menu Item Tags
 
 enum MenuItemTag: Int {
     case status = 100
     case launchAtLogin = 101
 }
+
